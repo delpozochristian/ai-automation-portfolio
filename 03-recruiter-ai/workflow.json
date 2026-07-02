@@ -1,0 +1,156 @@
+{
+  "name": "03 - Recruiter AI",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "15767a64-2def-4bfd-a396-283edad71dc5",
+      "name": "When chat message received",
+      "webhookId": "bb6b3b4d-e47b-4dd5-9dc1-98428e0f3054"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        -16
+      ],
+      "id": "7bcbc2c6-754b-49d3-8bc8-bf700ca2b4c7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "164c72e9-d8cc-45b3-8897-d56bd0f64596",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Busca información sobre la experiencia laboral, habilidades, tecnologías, educación y proyectos de Christian del Pozo utilizando la base vectorial de su CV.",
+        "qdrantCollection": {
+          "__rl": true,
+          "mode": "id",
+          "value": "portfolio_knowledge"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        112
+      ],
+      "id": "291d0d3e-e7ce-4c44-a935-f754a0420c1c",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "vf4UnVoVrteDeGik",
+          "name": "Qdrant Local"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        928,
+        176
+      ],
+      "id": "6f6895bf-6a36-4802-95e9-7fd81936e5a8",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f69df89d-12b6-4538-a14b-dae089c99146",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e5c6f56d2ceeca9013c50e1e343bc5b368d89ed5bb4d6dbcb8c98c682c938bb"
+  },
+  "nodeGroups": [],
+  "id": "bXaKFNtQjtu9UbMn",
+  "tags": []
+}

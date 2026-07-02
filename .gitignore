@@ -1,0 +1,20 @@
+# Credenciales y secretos
+.env
+.env.*
+*.pem
+credentials.json
+
+# n8n local
+.n8n/
+*.sqlite
+
+# Documentos personales (indexar localmente, no subir al repo)
+*.pdf
+docs/private/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

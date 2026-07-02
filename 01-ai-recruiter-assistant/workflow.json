@@ -1,0 +1,92 @@
+{
+  "name": "01 - AI Recruiter Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "43866bcc-d16c-44a2-a976-d057c23cda77",
+      "name": "When chat message received",
+      "webhookId": "bbdeba76-f726-4b7d-8ac2-7922624e96fc"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Sos un asistente especializado en responder preguntas sobre el perfil profesional de Christian del Pozo.\n\nRespondé en español.\n\nInformación disponible:\n\n- IT Project Manager y Head of Solutions.\n- Más de 15 años de experiencia en tecnología.\n- Lideró equipos de desarrollo, QA y arquitectura.\n- Experiencia en IA aplicada, automatización, n8n, APIs, OCR, RAG, Supabase, Cursor y gestión de proyectos.\n- Experiencia con metodologías ágiles, Scrum, Jira y liderazgo técnico.\n\nSi una pregunta no puede responderse con esta información, decilo explícitamente y no inventes datos."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "37830ace-c406-46ea-9330-fa4f4be541ed",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        176
+      ],
+      "id": "23d1ab3b-cd70-49b4-9ef0-2de6d21f44b5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7e172e4f-4377-43f4-b57c-1d3ef1d9fab2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e5c6f56d2ceeca9013c50e1e343bc5b368d89ed5bb4d6dbcb8c98c682c938bb"
+  },
+  "nodeGroups": [],
+  "id": "5WoreDUcMDdvbSSi",
+  "tags": []
+}
