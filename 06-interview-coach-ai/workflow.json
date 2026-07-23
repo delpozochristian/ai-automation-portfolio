@@ -1,0 +1,222 @@
+{
+  "name": "06 - Interview Coach AI",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "641af7c8-1e9c-4819-ac10-8ca8a5894490",
+      "name": "When chat message received",
+      "webhookId": "d93f87df-133c-4539-87c3-ae00234e7157"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Sos un coach de entrevistas laborales especializado en perfiles tecnológicos, innovación, automatización e IA.\n\nTenés acceso a dos herramientas:\n1. Base de conocimiento del candidato Christian del Pozo.\n2. Base de conocimiento de la búsqueda laboral.\n\nSiempre consultá ambas herramientas antes de responder.\n\nTu objetivo es preparar a Christian para una entrevista.\n\nCuando el usuario pida preparación para entrevista, devolvé:\n\n1. Resumen del puesto.\n2. Match entre el puesto y la experiencia de Christian.\n3. 10 preguntas probables de entrevista.\n4. Respuestas sugeridas en primera persona.\n5. Riesgos o puntos débiles a preparar.\n6. Historias concretas que Christian debería usar.\n7. Preguntas inteligentes para hacerle al entrevistador.\n\nNo inventes información. Si algo no está en la base, marcálo como supuesto o punto a validar.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0230e8c7-bcca-4974-b8b8-b68e46439cf3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "f8d532d3-40f9-4a19-8df9-8bc0d1edaada",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Busca información del candidato Christian del Pozo (experiencia, skills, proyectos, educación).",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "portfolio_knowledge",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        0
+      ],
+      "id": "52ce00ee-59c1-4570-9557-58823a6690bf",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "vf4UnVoVrteDeGik",
+          "name": "Qdrant Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Busca información de la descripción del puesto laboral (requisitos, responsabilidades, skills pedidas).",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "jobs_knowledge",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        192
+      ],
+      "id": "35f373ad-66f7-4ae2-b1eb-fd629c3b285b",
+      "name": "Qdrant Vector Store1",
+      "credentials": {
+        "qdrantApi": {
+          "id": "vf4UnVoVrteDeGik",
+          "name": "Qdrant Local"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        480,
+        240
+      ],
+      "id": "1a94c7cb-0a69-4582-a3de-5dc6301cd95e",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        656,
+        288
+      ],
+      "id": "fa2470d6-87e4-4cfd-b7e7-6447aafba62f",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4bc785ad-2390-4da8-845d-200752c9df4a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e5c6f56d2ceeca9013c50e1e343bc5b368d89ed5bb4d6dbcb8c98c682c938bb"
+  },
+  "nodeGroups": [],
+  "id": "zVlxqW6Vo9gPV455",
+  "tags": []
+}

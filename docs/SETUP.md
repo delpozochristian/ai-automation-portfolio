@@ -1,6 +1,6 @@
 # Guía de configuración
 
-Instrucciones para levantar los workflows de este portfolio en tu propia instancia de n8n.
+Cómo levantar los workflows de este portfolio en tu instancia de n8n.
 
 ---
 
@@ -8,13 +8,11 @@ Instrucciones para levantar los workflows de este portfolio en tu propia instanc
 
 ### n8n
 
-Opciones habituales:
-
-- **Docker** (recomendado para desarrollo local)
+- **Docker** (recomendado en local)
 - **n8n Cloud**
-- **Self-hosted** (npm / servidor propio)
+- **Self-hosted** (npm / VPS)
 
-Versión mínima recomendada: **n8n 1.x** con soporte para nodos `@n8n/n8n-nodes-langchain`.
+Versión mínima: **n8n 1.x** con `@n8n/n8n-nodes-langchain`.
 
 ### Qdrant
 
@@ -24,7 +22,7 @@ docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 
 Dashboard: `http://localhost:6333/dashboard`
 
-Las colecciones `portfolio_knowledge` y `jobs_knowledge` se crean automáticamente al ejecutar los workflows de indexación.
+Las colecciones `portfolio_knowledge` y `jobs_knowledge` se crean al ejecutar los workflows de indexación (02 y 04).
 
 ### Google Gemini
 
@@ -38,27 +36,25 @@ Las colecciones `portfolio_knowledge` y `jobs_knowledge` se crean automáticamen
 
 | Credencial | Tipo n8n | Usada en |
 |---|---|---|
-| Google Gemini(PaLM) Api account | `googlePalmApi` | Todos los workflows |
-| Qdrant Local | `qdrantApi` | 02, 03, 04, 05 |
+| Google Gemini(PaLM) Api account | `googlePalmApi` | 01–06 |
+| Qdrant Local | `qdrantApi` | 02–06 |
 
 ### Qdrant Local (ejemplo)
 
 | Campo | Valor local |
 |---|---|
 | URL | `http://localhost:6333` |
-| API Key | vacío (instancia local sin auth) |
+| API Key | vacío (sin auth en local) |
 
-Para Qdrant Cloud, usar la URL y API key de tu cluster.
+En Qdrant Cloud: URL + API key del cluster.
 
 ---
 
 ## 3. Archivos PDF
 
-Los workflows de indexación leen PDFs desde el filesystem de n8n.
+Los indexadores leen PDFs desde el filesystem de n8n.
 
 ### Docker
-
-Montar un volumen y habilitar acceso a archivos:
 
 ```yaml
 services:
@@ -73,39 +69,40 @@ services:
       - N8N_RESTRICT_FILE_ACCESS_TO=/home/node/.n8n-files
 ```
 
-Colocar los archivos:
-
 | Archivo | Ruta en el contenedor | Workflow |
 |---|---|---|
 | CV | `/home/node/.n8n-files/CV_delPozoChristian_2026.pdf` | 02 |
 | Job Description | `/home/node/.n8n-files/JobDescription.pdf` | 04 |
 
-> Ajustá el nodo **Read/Write Files from Disk** si usás otra ruta o nombre de archivo.
+> Si usás otra ruta o nombre, editá el nodo **Read/Write Files from Disk**.
 
 ---
 
 ## 4. Orden de ejecución
 
 ```
-02 - CV RAG          →  crea/llena portfolio_knowledge
-04 - Job Indexer     →  crea/llena jobs_knowledge
-03 - Recruiter AI    →  chat con RAG del CV
-05 - Recruiter Match →  comparación candidato vs. puesto
-01 - Assistant       →  independiente (sin RAG)
+02 - CV RAG              →  portfolio_knowledge
+04 - Job Indexer         →  jobs_knowledge
+03 - Recruiter AI        →  chat RAG (solo CV)
+05 - Recruiter Match     →  scoring candidato vs. puesto
+06 - Interview Coach     →  prep de entrevista (preguntas + respuestas)
+01 - Assistant           →  independiente (sin RAG)
 ```
 
 ### Indexación (manual)
 
-1. Importar workflow **02** o **04**
+1. Importar **02** y/o **04**
 2. Verificar ruta del PDF y credenciales
-3. Clic en **Execute workflow**
-4. Confirmar en Qdrant que la colección tiene puntos indexados
+3. **Execute workflow**
+4. Confirmar puntos en Qdrant
 
 ### Chat (interactivo)
 
-1. Importar workflow **01**, **03** o **05**
+1. Importar **01**, **03**, **05** o **06**
 2. Activar el workflow
-3. Abrir el panel de chat del nodo **When chat message received**
+3. Abrir el chat del nodo **When chat message received**
+
+**Importante:** 03, 05 y 06 necesitan datos indexados. Sin 02/04, las respuestas serán pobres o vacías.
 
 ---
 
@@ -113,10 +110,10 @@ Colocar los archivos:
 
 1. **Workflows → Import from File**
 2. Seleccionar `workflow.json` de la carpeta del proyecto
-3. Si n8n muestra nodos con credenciales en rojo, reasignar:
-   - Google Gemini en nodos de LLM y Embeddings
-   - Qdrant en nodos Vector Store
-4. Guardar y activar (para workflows de chat)
+3. Si hay nodos en rojo, reasignar:
+   - Google Gemini → LLM y Embeddings
+   - Qdrant → Vector Store
+4. Guardar y activar (chat) o ejecutar (indexación)
 
 ---
 
@@ -124,19 +121,20 @@ Colocar los archivos:
 
 ### Cambiar el perfil del candidato
 
-- **Workflow 01:** editar el `systemMessage` del nodo AI Agent
-- **Workflows 02–05:** reemplazar el PDF del CV y re-ejecutar la indexación
+- **01:** editar el `systemMessage` del AI Agent
+- **02–06:** reemplazar el PDF del CV, re-ejecutar **02**, y (si aplica) **04**
 
 ### Cambiar el modelo Gemini
 
-En los nodos **Google Gemini Chat Model**, el campo `modelName` acepta valores como:
+En **Google Gemini Chat Model**, `modelName` puede ser:
 
-- `models/gemini-2.5-flash` (usado en 03 y 05)
+- `models/gemini-2.5-flash` (03, 05)
 - `models/gemini-2.0-flash`
+- u otro modelo Gemini disponible en tu cuenta
 
-### Prompt del matcher (workflow 05)
+### Prompt del matcher (05)
 
-El system prompt del AI Agent define el formato de salida:
+Formato de salida:
 
 - Compatibilidad (%)
 - Fortalezas / Debilidades
@@ -145,23 +143,38 @@ El system prompt del AI Agent define el formato de salida:
 - Recomendación
 - Preguntas para entrevista
 
+### Prompt del coach (06)
+
+Formato de salida:
+
+1. Resumen del puesto
+2. Match con la experiencia del candidato
+3. 10 preguntas probables
+4. Respuestas sugeridas (1ª persona)
+5. Riesgos / puntos débiles
+6. Historias concretas a usar
+7. Preguntas inteligentes para el entrevistador
+
+Los nodos Vector Store de 05 y 06 incluyen `toolDescription` para que el agente sepa cuál herramienta es CV y cuál es job description.
+
 ---
 
 ## 7. Troubleshooting
 
 | Problema | Solución |
 |---|---|
-| Credenciales en rojo tras importar | Reasignar credenciales manualmente en cada nodo |
-| Error al leer PDF | Verificar ruta, permisos y `N8N_RESTRICT_FILE_ACCESS_TO` |
-| Qdrant sin resultados | Ejecutar primero los workflows 02 y/o 04 |
-| Colección no existe | Ejecutar el workflow de indexación; Qdrant la crea al insertar |
-| Respuestas genéricas en 03/05 | Confirmar que `portfolio_knowledge` tiene datos indexados |
-| Chat no responde | Verificar que el workflow está **activo** |
+| Credenciales en rojo tras importar | Reasignar en cada nodo |
+| Error al leer PDF | Ruta, permisos y `N8N_RESTRICT_FILE_ACCESS_TO` |
+| Qdrant sin resultados | Ejecutar primero 02 y/o 04 |
+| Colección no existe | Corre el indexador; Qdrant la crea al insertar |
+| Respuestas genéricas en 03/05/06 | Verificar que las colecciones tienen puntos |
+| 05/06 confunde CV con puesto | Revisar `toolDescription` en cada Vector Store |
+| Chat no responde | Workflow **activo** + credenciales Gemini OK |
 
 ---
 
-## 8. Notas de seguridad
+## 8. Seguridad
 
-- No commitear `.env`, API keys ni PDFs con datos personales.
-- Los `workflow.json` exportados solo contienen **referencias** a credenciales (nombre e ID interno de n8n), nunca el secreto en sí.
-- Al compartir workflows, rotá API keys si alguna vez se exportaron con credenciales embebidas (no es el caso de este repo).
+- No versionar `.env`, API keys ni PDFs personales.
+- Los `workflow.json` solo llevan referencias a credenciales (nombre/ID de n8n), no el secreto.
+- Si alguna vez exportaste con secretos embebidos, rotá las keys.
