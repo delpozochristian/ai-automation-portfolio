@@ -27,41 +27,129 @@ Recruiters waste hours screening CVs manually:
 
 **AI Talent Copilot** is a suite of n8n workflows that help recruiters:
 
-1. Index CVs and job descriptions into a vector knowledge base (RAG)
+1. Index CVs and job descriptions into vector knowledge bases (RAG)
 2. Chat with candidate / role context
 3. Compare one candidate vs a JD (match analysis)
-4. **Screen multiple candidates and return a ranked JSON shortlist**
+4. **Screen multiple candidates and return an ATS-ready ranked JSON shortlist**
 5. Generate interview plans and practice answers
 
 ---
 
-## Architecture
+## Architecture decision: index once, retrieve many
+
+### Why this design
+
+Screening at scale cannot re-parse full PDFs on every run. Parsing + embedding is **expensive** and **slow**. The product separates:
+
+| Phase | When | What happens |
+|---|---|---|
+| **Ingestion** | Once per CV / JD upload | Extract → embed → store in Qdrant |
+| **Screening** | Every requisition / batch | Retrieve top-k chunks → score with Gemini → rank |
+
+### Qdrant collections
+
+| Collection | Purpose | Written by | Read by |
+|---|---|---|---|
+| `portfolio_knowledge` | Single personal CV (portfolio demos 01–06) | 02 | 03, 05, 06 |
+| `jobs_knowledge` | Job descriptions (`job_id` metadata) | 04 | 05, 06, **07** |
+| **`candidates_knowledge`** | **Multi-candidate pool (`candidate_id` metadata)** | **08** | **07** |
+
+`portfolio_knowledge` stays for the original personal-portfolio demos.  
+**`candidates_knowledge`** is the scalable pool for product screening.
+
+### Screening data flow
+
+```mermaid
+flowchart LR
+    subgraph ingest [Ingestion - once]
+        CVs[Candidate CVs] --> W08[08 Candidates Indexer]
+        JD[Job Description] --> W04[04 JD Indexer]
+        W08 --> QC[(candidates_knowledge)]
+        W04 --> QJ[(jobs_knowledge)]
+    end
+
+    subgraph screen [Screening - many times]
+        Req[job_id + candidate_ids] --> W07[07 Screening Engine]
+        W07 --> QC
+        W07 --> QJ
+        W07 --> Gemini[Gemini scoring]
+        Gemini --> ATS[ATS JSON ranking]
+    end
+```
+
+**Rule:** Workflow **07 never opens PDFs**. It only retrieves embeddings already stored by **08** and **04**.
+
+---
+
+## Explainable scoring (not just a %)
+
+Each candidate result includes:
+
+- **criteria_scores** — technical / experience / leadership with rationale
+- **evidence** — matched requirements, quotes/facts, missing items
+- **gaps** and **strengths**
+- **recommendation** — `ADVANCE | HOLD | REJECT` + summary
+- **interview_priority** — `HIGH | MEDIUM | LOW`
+
+### ATS-oriented JSON contract
+
+Designed for future ATS / webhook integration:
+
+```json
+{
+  "candidate_id": "cand_001",
+  "candidate_name": "Alex Rivera",
+  "job_id": "job_001",
+  "overall_score": 92,
+  "criteria_scores": {
+    "technical": { "score": 95, "weight": 0.45, "rationale": "..." },
+    "experience": { "score": 90, "weight": 0.35, "rationale": "..." },
+    "leadership": { "score": 88, "weight": 0.20, "rationale": "..." }
+  },
+  "strengths": ["..."],
+  "gaps": ["..."],
+  "evidence": {
+    "matched_requirements": ["..."],
+    "quotes_or_facts": ["..."],
+    "missing": ["..."]
+  },
+  "recommendation": {
+    "decision": "ADVANCE",
+    "summary": "..."
+  },
+  "interview_priority": "HIGH"
+}
+```
+
+Full sample ranking: [`demo/sample_screening_result.json`](./demo/sample_screening_result.json)
+
+---
+
+## Architecture overview
 
 ```mermaid
 flowchart TB
     subgraph ingest [Ingestion]
-        CV[CVs PDF/MD] --> W02[02 CV Indexer]
+        CV1[Personal CV] --> W02[02 CV Indexer]
+        CVn[Candidate batch] --> W08[08 Candidates Indexer]
         JD[Job Descriptions] --> W04[04 JD Indexer]
-        W02 --> Q1[(Qdrant: portfolio_knowledge)]
-        W04 --> Q2[(Qdrant: jobs_knowledge)]
+        W02 --> Q1[(portfolio_knowledge)]
+        W08 --> Q3[(candidates_knowledge)]
+        W04 --> Q2[(jobs_knowledge)]
     end
 
     subgraph copilots [AI Talent Copilot]
-        W01[01 Assistant]
         W03[03 Recruiter RAG Chat]
         W05[05 Match AI]
         W06[06 Interview Coach]
         W07[07 Screening Engine]
-        Gemini[Google Gemini]
         W03 --> Q1
         W05 --> Q1
         W05 --> Q2
         W06 --> Q1
         W06 --> Q2
-        W07 --> Gemini
-        W05 --> Gemini
-        W06 --> Gemini
-        W03 --> Gemini
+        W07 --> Q3
+        W07 --> Q2
     end
 ```
 
@@ -74,52 +162,28 @@ flowchart TB
 | # | Module | What it does |
 |---|---|---|
 | 01 | AI Recruiter Assistant | Baseline conversational assistant |
-| 02 | CV RAG Indexer | Embeds CV → `portfolio_knowledge` |
+| 02 | CV RAG Indexer | Embeds personal CV → `portfolio_knowledge` |
 | 03 | Recruiter AI | Chat over candidate RAG |
 | 04 | Job Description Indexer | Embeds JD → `jobs_knowledge` |
-| 05 | Recruiter Match AI | Single candidate vs JD (scores, gaps, questions) |
+| 05 | Recruiter Match AI | Single candidate vs JD |
 | 06 | Interview Coach AI | Interview prep + storytelling |
-| **07** | **Recruiter Screening Engine** | **Multi-CV batch scoring + ranking JSON** |
+| **07** | **Recruiter Screening Engine** | **Multi-candidate RAG scoring + ATS ranking** |
+| **08** | **Candidates Knowledge Indexer** | **Batch embed CVs → `candidates_knowledge`** |
 
-Demo data (fictional): [`demo/`](./demo/) — Senior Backend Java Engineer + 3 candidates.
-
-Prompt standards (anti-bias, auditable): [`docs/PROMPTS.md`](./docs/PROMPTS.md)
+Demo data (fictional): [`demo/`](./demo/)  
+Prompt standards: [`docs/PROMPTS.md`](./docs/PROMPTS.md)
 
 ---
 
 ## End-to-end flow
 
 ```
-1. Index JD          → workflow 04  (or paste JD into 07)
-2. Index CV(s)       → workflow 02  (single) / batch texts in 07
-3. Screen shortlist  → workflow 07  → ranked JSON
-4. Deep-dive match   → workflow 05
-5. Interview plan    → workflow 06
+1. Index JD                 → 04  → jobs_knowledge
+2. Index candidate batch    → 08  → candidates_knowledge
+3. Screen shortlist         → 07  → ranked ATS JSON  ★
+4. Deep-dive one candidate  → 05
+5. Interview plan           → 06
 ```
-
----
-
-## Example screening result
-
-```json
-{
-  "candidate_name": "Alex Rivera",
-  "overall_score": 92,
-  "technical_match": 95,
-  "experience_match": 90,
-  "leadership_match": 88,
-  "strengths": [
-    "Java 17 + Spring Boot microservices on AWS EKS",
-    "Kafka at ~40M messages/day",
-    "Mentored engineers and ran hiring loops"
-  ],
-  "gaps": ["Terraform depth not evidenced"],
-  "recommendation": "Top priority interview — strong hard-skill and leadership match.",
-  "interview_priority": "HIGH"
-}
-```
-
-Full sample ranking: [`demo/sample_screening_result.json`](./demo/sample_screening_result.json)
 
 ---
 
@@ -127,14 +191,14 @@ Full sample ranking: [`demo/sample_screening_result.json`](./demo/sample_screeni
 
 | Metric | Manual process | With AI Talent Copilot |
 |---|---|---|
-| Time to shortlist 50 CVs | Days | Minutes (batch + ranking) |
-| Consistency | Varies by recruiter | Shared rubric + JSON scores |
-| Explainability | Informal notes | Strengths / gaps / recommendation |
-| Interview quality | Ad-hoc questions | Gap-driven question sets |
-| Scalability | Linear with headcount | Parallelizable automation |
+| Time to shortlist 50 CVs | Days | Minutes (retrieve + rank) |
+| Cost per re-screen | Re-parse every PDF | Reuse embeddings |
+| Consistency | Varies by recruiter | Shared rubric + JSON |
+| Explainability | Informal notes | Criteria + evidence + decision |
+| ATS integration | Copy/paste | Stable JSON contract |
 
 **Before:** Recruiter analyzes 100 CVs manually.  
-**After:** AI prioritizes candidates and generates actionable insights automatically.
+**After:** AI prioritizes candidates and generates actionable, auditable insights.
 
 ---
 
@@ -143,27 +207,26 @@ Full sample ranking: [`demo/sample_screening_result.json`](./demo/sample_screeni
 - TA teams screening high-volume tech requisitions
 - Hiring managers who want a ranked shortlist before interviews
 - Agencies comparing multiple profiles against one JD
-- Demo / PoC for AI-assisted Talent Acquisition platforms
+- PoC for AI-assisted Talent Acquisition / ATS enrichment
 
 ---
 
 ## Quick start
 
-1. Run Qdrant + n8n (see [`docs/SETUP.md`](./docs/SETUP.md))
-2. Import any `*/workflow.json`
-3. Attach Gemini (+ Qdrant for RAG modules)
-4. For a product demo: import **07**, Execute workflow → inspect ranked JSON
-5. Optional LinkedIn narrative: [`docs/LINKEDIN_DEMO.md`](./docs/LINKEDIN_DEMO.md)
+1. Run Qdrant + n8n ([`docs/SETUP.md`](./docs/SETUP.md))
+2. Import **08** → Execute (index demo candidates)
+3. Import **04** → index the sample JD (or rely on job summary fallback notes in SETUP)
+4. Import **07** → Execute → inspect ranked ATS JSON
+5. LinkedIn narrative: [`docs/LINKEDIN_DEMO.md`](./docs/LINKEDIN_DEMO.md)
 
 ---
 
-## Suggested screenshots (for README / LinkedIn)
+## Suggested screenshots
 
-1. n8n canvas of **07 Screening Engine** (batch → score → rank)
-2. Execution output JSON with ranked candidates
-3. Qdrant collections `portfolio_knowledge` / `jobs_knowledge`
-4. Chat UI of **05 Match AI** with compatibility breakdown
-5. **06 Interview Coach** question list
+1. Qdrant showing `candidates_knowledge` + `jobs_knowledge`
+2. n8n canvas of **08** (index) and **07** (screen)
+3. Ranked ATS JSON output with `criteria_scores` + `evidence`
+4. **05** match chat / **06** interview coach
 
 ---
 

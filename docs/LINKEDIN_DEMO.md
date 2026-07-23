@@ -25,37 +25,37 @@ Repo: https://github.com/delpozochristian/ai-automation-portfolio
 
 ## The architecture
 
+**Index once / retrieve many** — CVs are embedded into `candidates_knowledge` once; screening only retrieves chunks (no PDF re-processing).
+
 ```
-CVs / JD  →  n8n workflows  →  Gemini (LLM + embeddings)
-                    ↓
-              Qdrant (RAG)
-                    ↓
-     Match scores · Ranking · Interview coach
+CVs  →  08 Indexer  →  candidates_knowledge ─┐
+JD   →  04 Indexer  →  jobs_knowledge ───────┼→ 07 Screening → ATS JSON ranking
+                                             └→ Gemini (explainable scores)
 ```
 
 | Layer | Tech |
 |---|---|
 | Orchestration | n8n |
 | LLM / embeddings | Google Gemini |
-| Vector DB | Qdrant |
+| Vector DB | Qdrant (`candidates_knowledge`, `jobs_knowledge`) |
 | Agents / RAG | LangChain nodes in n8n |
 
 **Product modules**
 
-1. Index CV + JD (RAG)
+1. Index JD + multi-candidate pool (RAG)
 2. Chat over candidate knowledge
 3. Single-candidate match analysis
-4. **Batch Screening Engine** → ranked JSON
+4. **Batch Screening Engine** → ATS JSON (`criteria_scores` + `evidence`)
 5. Interview Coach
 
 ---
 
 ## Demo script (60–90 seconds)
 
-1. **Setup:** Job = Senior Backend Java Engineer (Java, Spring Boot, Kafka, AWS, SQL, leadership).
-2. **Input:** 3 fictional CVs (strong / partial / leadership-heavy).
-3. **Run:** Workflow `07 - Recruiter Screening Engine`.
-4. **Output:** Ranked list with `overall_score`, strengths, gaps, `interview_priority`.
+1. **Index:** Run `08` (candidates → `candidates_knowledge`) + `04` (JD → `jobs_knowledge`).
+2. **Setup:** Job = Senior Backend Java Engineer (Java, Spring Boot, Kafka, AWS, SQL, leadership).
+3. **Screen:** Run `07 - Recruiter Screening Engine` (no PDFs — RAG only).
+4. **Output:** ATS JSON with `candidate_id`, `criteria_scores`, `evidence`, `recommendation`, `interview_priority`.
 5. **Follow-up:** Open Match AI or Interview Coach for the #1 candidate.
 
 Expected pattern from demo data:

@@ -1,64 +1,176 @@
 {
+  "product": "AI Talent Copilot",
+  "workflow": "07 - Recruiter Screening Engine",
+  "architecture": "index-once / retrieve-many",
+  "job_id": "job_001",
   "job_title": "Senior Backend Java Engineer",
-  "generated_at": "2026-07-23T12:00:00Z",
+  "candidates_evaluated": 3,
+  "collections": {
+    "candidates": "candidates_knowledge",
+    "jobs": "jobs_knowledge"
+  },
   "ranking": [
     {
       "rank": 1,
+      "candidate_id": "cand_001",
       "candidate_name": "Alex Rivera",
+      "job_id": "job_001",
       "overall_score": 92,
-      "technical_match": 95,
-      "experience_match": 90,
-      "leadership_match": 88,
+      "criteria_scores": {
+        "technical": {
+          "score": 95,
+          "weight": 0.45,
+          "rationale": "Java 17, Spring Boot microservices, AWS EKS, production Kafka at scale."
+        },
+        "experience": {
+          "score": 90,
+          "weight": 0.35,
+          "rationale": "8 years backend with measurable production ownership."
+        },
+        "leadership": {
+          "score": 88,
+          "weight": 0.2,
+          "rationale": "Tech lead of 5; mentoring and hiring loops evidenced."
+        }
+      },
       "strengths": [
-        "8 years backend with Java 17 + Spring Boot microservices",
-        "Production Kafka at ~40M messages/day",
-        "AWS EKS ownership and measurable latency improvements",
-        "Mentored engineers and ran hiring loops"
+        "Production Kafka (~40M messages/day)",
+        "Spring Boot microservices on AWS EKS",
+        "Mentoring and hiring participation"
       ],
       "gaps": [
-        "Kubernetes mentioned via EKS but no explicit Terraform depth"
+        "Terraform / infra-as-code depth not evidenced"
       ],
-      "recommendation": "Top priority interview. Strong hard-skill match on Java/Spring/Kafka/AWS plus proven tech-lead ownership.",
+      "evidence": {
+        "matched_requirements": [
+          "Java 17 + Spring Boot",
+          "Microservices on AWS",
+          "Kafka event pipelines",
+          "SQL (PostgreSQL/MySQL)",
+          "Leadership / mentoring"
+        ],
+        "quotes_or_facts": [
+          "12 Spring Boot microservices on AWS EKS",
+          "Kafka pipelines ~40M messages/day",
+          "Mentored 4 engineers; hiring loops"
+        ],
+        "missing": [
+          "Explicit Terraform experience"
+        ]
+      },
+      "recommendation": {
+        "decision": "ADVANCE",
+        "summary": "Top priority interview. Strong hard-skill match and proven tech-lead ownership."
+      },
       "interview_priority": "HIGH"
     },
     {
       "rank": 2,
+      "candidate_id": "cand_003",
       "candidate_name": "Sam Okonkwo",
+      "job_id": "job_001",
       "overall_score": 84,
-      "technical_match": 78,
-      "experience_match": 92,
-      "leadership_match": 95,
+      "criteria_scores": {
+        "technical": {
+          "score": 78,
+          "weight": 0.45,
+          "rationale": "Strong Java/Spring/AWS; Kafka exposure prior but less day-to-day recently."
+        },
+        "experience": {
+          "score": 92,
+          "weight": 0.35,
+          "rationale": "10 years Java ecosystem; platform ownership."
+        },
+        "leadership": {
+          "score": 95,
+          "weight": 0.2,
+          "rationale": "Engineering Manager of 8; hiring scorecards."
+        }
+      },
       "strengths": [
-        "10 years Java ecosystem experience",
         "Engineering management of 8 backend engineers",
-        "Microservices on AWS with prior Kafka exposure",
-        "Hiring scorecards and mentoring experience"
+        "Microservices on AWS",
+        "Prior Kafka + strong mentoring/hiring"
       ],
       "gaps": [
-        "Less day-to-day Kafka depth than ideal for this IC-heavy role",
-        "Current role is EM — confirm desire for senior IC contribution"
+        "Current Kafka depth may be lighter than IC-heavy expectation",
+        "Confirm desire for senior IC contribution vs EM track"
       ],
-      "recommendation": "Strong second. Excellent leadership and platform judgment; validate hands-on Kafka and coding expectations for the role.",
+      "evidence": {
+        "matched_requirements": [
+          "Java / Spring Boot",
+          "Microservices on AWS",
+          "Leadership",
+          "Prior Kafka topics"
+        ],
+        "quotes_or_facts": [
+          "Leads team of 8 backend engineers",
+          "SQS + some Kafka topics in prior senior IC role"
+        ],
+        "missing": [
+          "Recent high-throughput Kafka ownership"
+        ]
+      },
+      "recommendation": {
+        "decision": "ADVANCE",
+        "summary": "Strong second. Validate hands-on Kafka and coding expectations for the role."
+      },
       "interview_priority": "HIGH"
     },
     {
       "rank": 3,
+      "candidate_id": "cand_002",
       "candidate_name": "Jordan Lee",
+      "job_id": "job_001",
       "overall_score": 58,
-      "technical_match": 62,
-      "experience_match": 55,
-      "leadership_match": 25,
+      "criteria_scores": {
+        "technical": {
+          "score": 62,
+          "weight": 0.45,
+          "rationale": "Solid Spring Boot/SQL/AWS ECS; no production Kafka evidenced."
+        },
+        "experience": {
+          "score": 55,
+          "weight": 0.35,
+          "rationale": "5 years total — below 6+ seniority target."
+        },
+        "leadership": {
+          "score": 25,
+          "weight": 0.2,
+          "rationale": "No mentoring or leadership evidence in retrieved chunks."
+        }
+      },
       "strengths": [
-        "Solid Spring Boot API development",
+        "Spring Boot API development",
         "PostgreSQL/MySQL and AWS ECS exposure",
-        "Good testing habits with JUnit/Mockito"
+        "Good testing habits"
       ],
       "gaps": [
         "No production Kafka / event-driven ownership",
         "Below 6+ years seniority target",
         "No mentoring or leadership evidence"
       ],
-      "recommendation": "Possible future pipeline / mid-level track. Not a priority for this senior requisition unless requirements are flexible.",
+      "evidence": {
+        "matched_requirements": [
+          "Java / Spring Boot",
+          "SQL",
+          "AWS ECS (basic)",
+          "CI/testing"
+        ],
+        "quotes_or_facts": [
+          "5 years Java/Spring Boot",
+          "ShopWave: APIs, PostgreSQL, Redis, AWS ECS"
+        ],
+        "missing": [
+          "Kafka",
+          "6+ years experience",
+          "Leadership / mentoring"
+        ]
+      },
+      "recommendation": {
+        "decision": "REJECT",
+        "summary": "Not a priority for this senior requisition; consider mid-level pipeline if requirements flex."
+      },
       "interview_priority": "LOW"
     }
   ]

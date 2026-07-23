@@ -22,8 +22,6 @@ docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 
 Dashboard: `http://localhost:6333/dashboard`
 
-Colecciones creadas por indexación: `portfolio_knowledge`, `jobs_knowledge`.
-
 ### Google Gemini
 
 1. API key en [Google AI Studio](https://aistudio.google.com/apikey)
@@ -35,8 +33,8 @@ Colecciones creadas por indexación: `portfolio_knowledge`, `jobs_knowledge`.
 
 | Credencial | Tipo | Workflows |
 |---|---|---|
-| Google Gemini(PaLM) Api account | `googlePalmApi` | 01–07 |
-| Qdrant Local | `qdrantApi` | 02–07 (RAG) |
+| Google Gemini(PaLM) Api account | `googlePalmApi` | 01–08 |
+| Qdrant Local | `qdrantApi` | 02–08 (RAG) |
 
 | Campo Qdrant local | Valor |
 |---|---|
@@ -45,11 +43,21 @@ Colecciones creadas por indexación: `portfolio_knowledge`, `jobs_knowledge`.
 
 ---
 
-## 3. Archivos
+## 3. Colecciones Qdrant
 
-### PDFs personales (indexers 02 / 04)
+| Colección | Rol | Escrita por | Leída por |
+|---|---|---|---|
+| `portfolio_knowledge` | CV personal (demos 01–06) | 02 | 03, 05, 06 |
+| `jobs_knowledge` | Job descriptions | 04 | 05, 06, 07 |
+| `candidates_knowledge` | Pool multi-candidato (producto) | **08** | **07** |
 
-Montar volumen Docker:
+Arquitectura: **index once / retrieve many** — ver README.
+
+---
+
+## 4. Archivos
+
+### PDFs personales (02 / 04)
 
 ```yaml
 services:
@@ -65,76 +73,71 @@ services:
 
 | Archivo | Ruta ejemplo | Workflow |
 |---|---|---|
-| CV | `/home/node/.n8n-files/CV.pdf` | 02 |
+| CV personal | `/home/node/.n8n-files/CV.pdf` | 02 |
 | Job Description | `/home/node/.n8n-files/JobDescription.pdf` | 04 |
 
-### Demo batch (workflow 07)
+### Demo batch (08 + 07)
 
-No requiere PDF: el nodo **Load Demo Screening Batch** trae JD + 3 CVs ficticios embebidos.  
-Textos de referencia en el repo: carpeta [`demo/`](../demo/).
+- **08** embebe 3 CVs ficticios y los indexa en `candidates_knowledge` (sin PDF).
+- **07** no lee archivos: solo RAG retrieve + scoring.
+- Textos de referencia: carpeta [`demo/`](../demo/).
 
----
-
-## 4. Orden de ejecución (producto)
-
-```
-04 - Job Indexer         →  jobs_knowledge          (opcional para 07)
-02 - CV Indexer          →  portfolio_knowledge     (para 03/05/06)
-07 - Screening Engine    →  ranking JSON multi-CV   ★ demo principal
-05 - Match AI            →  deep-dive 1 candidato
-06 - Interview Coach     →  plan de entrevista
-03 - Recruiter AI        →  chat RAG candidato
-01 - Assistant           →  baseline sin RAG
-```
-
-### Demo rápida (LinkedIn / stakeholders)
-
-1. Importar **07 - Recruiter Screening Engine**
-2. Credencial Gemini
-3. **Execute workflow**
-4. Ver salida de **Rank Candidates** (JSON ordenado)
-5. Comparar con `demo/sample_screening_result.json`
-
-### RAG completo
-
-1. Ejecutar **04** (y **02** si usás 03/05/06)
-2. Activar chat en 03 / 05 / 06
-3. Opcional: habilitar nodo **Optional JD RAG** en 07 tras indexar la JD
+Para producción en 08: reemplazar el Code node por Read Files + Extract PDF + metadata `candidate_id`.
 
 ---
 
-## 5. Importar
+## 5. Orden de ejecución (producto)
+
+```
+04 - Job Indexer                 → jobs_knowledge
+08 - Candidates Knowledge Indexer → candidates_knowledge
+07 - Screening Engine            → ranking ATS JSON   ★
+05 - Match AI                    → deep-dive 1 candidato
+06 - Interview Coach             → plan de entrevista
+02/03                            → demos portfolio personal
+01                               → baseline sin RAG
+```
+
+### Demo Screening (recomendado)
+
+1. Importar **08** → Gemini + Qdrant → **Execute** (crea `candidates_knowledge`)
+2. Importar **04** → indexar JD de demo en `jobs_knowledge` (ideal)
+3. Importar **07** → **Execute** → salida de **Rank Candidates (ATS Payload)**
+4. Comparar con `demo/sample_screening_result.json`
+
+Si `jobs_knowledge` está vacío, el agente puede fallar o scorear mal: indexá la JD primero.
+
+---
+
+## 6. Importar
 
 1. **Workflows → Import from File**
 2. Elegir `workflow.json`
 3. Reasignar Gemini / Qdrant si aparecen en rojo
-4. Activar (chat) o Execute (manual)
+4. Activar (chat) o Execute (manual / screening)
 
 ---
 
-## 6. Prompts
+## 7. Prompts & contrato ATS
 
-Fuente de verdad: [`docs/PROMPTS.md`](./PROMPTS.md)
-
-- Anti-sesgo (solo skills / experiencia / requisitos)
-- Salidas auditables
-- JSON schema para screening (07)
+- Prompts anti-sesgo: [`docs/PROMPTS.md`](./PROMPTS.md)
+- Output 07: `candidate_id`, `job_id`, `criteria_scores`, `evidence`, `recommendation`, `interview_priority`
 
 ---
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 | Problema | Solución |
 |---|---|
+| 07: no hay evidencia de candidato | Ejecutar **08** primero |
+| 07: job retrieve vacío | Ejecutar **04** con la JD de demo |
 | Credenciales en rojo | Reasignar en cada nodo |
-| 07 no parsea JSON | Revisar salida cruda del LLM; el Code node busca `{...}` |
-| RAG vacío en 03/05/06 | Ejecutar 02 y 04 primero |
-| Scores inconsistentes | Misma JD + misma rúbrica en `PROMPTS.md` |
-| Chat sin respuesta | Workflow activo + Gemini OK |
+| JSON inválido del agente | Revisar system prompt; el Code node busca `{...}` |
+| Scores inconsistentes | Misma rúbrica en `PROMPTS.md` |
 
 ---
 
-## 8. Seguridad
+## 9. Seguridad
 
 - No versionar `.env`, API keys ni PDFs personales
 - Demos = perfiles ficticios
