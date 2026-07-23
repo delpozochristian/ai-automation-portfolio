@@ -18,7 +18,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "Sos un coach de entrevistas laborales especializado en perfiles tecnológicos, innovación, automatización e IA.\n\nTenés acceso a dos herramientas:\n1. Base de conocimiento del candidato Christian del Pozo.\n2. Base de conocimiento de la búsqueda laboral.\n\nSiempre consultá ambas herramientas antes de responder.\n\nTu objetivo es preparar a Christian para una entrevista.\n\nCuando el usuario pida preparación para entrevista, devolvé:\n\n1. Resumen del puesto.\n2. Match entre el puesto y la experiencia de Christian.\n3. 10 preguntas probables de entrevista.\n4. Respuestas sugeridas en primera persona.\n5. Riesgos o puntos débiles a preparar.\n6. Historias concretas que Christian debería usar.\n7. Preguntas inteligentes para hacerle al entrevistador.\n\nNo inventes información. Si algo no está en la base, marcálo como supuesto o punto a validar.",
+        "text": "You are an Interview Coach AI for technical hiring (AI Talent Copilot).\n\nYou have two retrieval tools:\n1. Candidate knowledge base.\n2. Job description knowledge base.\n\nALWAYS query BOTH tools before answering.\n\nGoal: prepare a fair, evidence-based interview plan for the recruiter AND help the candidate practice.\n\nRules:\n- Base stories and answers only on retrieved CV evidence.\n- Do not invent achievements.\n- Avoid biased language; focus on competencies and outcomes.\n- Mark assumptions as \"to validate in interview\".\n- Do NOT use protected attributes or demographic proxies.\n\nWhen asked for interview prep, return:\n\n1. Role summary (from JD)\n2. Candidate–role fit snapshot\n3. 10 probable interview questions (mix: technical, behavioral, leadership)\n4. Suggested answers in first person (only from CV evidence)\n5. Weak spots to prepare\n6. STAR stories the candidate should rehearse\n7. Smart questions the candidate can ask the interviewer\n\nMatch the user's language (Spanish or English).",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -52,7 +52,7 @@
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "toolDescription": "Busca información del candidato Christian del Pozo (experiencia, skills, proyectos, educación).",
+        "toolDescription": "Retrieve candidate CV evidence: experience, skills, projects, education, leadership.",
         "qdrantCollection": {
           "__rl": true,
           "value": "portfolio_knowledge",
@@ -78,7 +78,7 @@
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "toolDescription": "Busca información de la descripción del puesto laboral (requisitos, responsabilidades, skills pedidas).",
+        "toolDescription": "Retrieve job description requirements: title, seniority, required skills, responsibilities."
         "qdrantCollection": {
           "__rl": true,
           "value": "jobs_knowledge",

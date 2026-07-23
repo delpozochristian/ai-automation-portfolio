@@ -1,0 +1,65 @@
+{
+  "job_title": "Senior Backend Java Engineer",
+  "generated_at": "2026-07-23T12:00:00Z",
+  "ranking": [
+    {
+      "rank": 1,
+      "candidate_name": "Alex Rivera",
+      "overall_score": 92,
+      "technical_match": 95,
+      "experience_match": 90,
+      "leadership_match": 88,
+      "strengths": [
+        "8 years backend with Java 17 + Spring Boot microservices",
+        "Production Kafka at ~40M messages/day",
+        "AWS EKS ownership and measurable latency improvements",
+        "Mentored engineers and ran hiring loops"
+      ],
+      "gaps": [
+        "Kubernetes mentioned via EKS but no explicit Terraform depth"
+      ],
+      "recommendation": "Top priority interview. Strong hard-skill match on Java/Spring/Kafka/AWS plus proven tech-lead ownership.",
+      "interview_priority": "HIGH"
+    },
+    {
+      "rank": 2,
+      "candidate_name": "Sam Okonkwo",
+      "overall_score": 84,
+      "technical_match": 78,
+      "experience_match": 92,
+      "leadership_match": 95,
+      "strengths": [
+        "10 years Java ecosystem experience",
+        "Engineering management of 8 backend engineers",
+        "Microservices on AWS with prior Kafka exposure",
+        "Hiring scorecards and mentoring experience"
+      ],
+      "gaps": [
+        "Less day-to-day Kafka depth than ideal for this IC-heavy role",
+        "Current role is EM — confirm desire for senior IC contribution"
+      ],
+      "recommendation": "Strong second. Excellent leadership and platform judgment; validate hands-on Kafka and coding expectations for the role.",
+      "interview_priority": "HIGH"
+    },
+    {
+      "rank": 3,
+      "candidate_name": "Jordan Lee",
+      "overall_score": 58,
+      "technical_match": 62,
+      "experience_match": 55,
+      "leadership_match": 25,
+      "strengths": [
+        "Solid Spring Boot API development",
+        "PostgreSQL/MySQL and AWS ECS exposure",
+        "Good testing habits with JUnit/Mockito"
+      ],
+      "gaps": [
+        "No production Kafka / event-driven ownership",
+        "Below 6+ years seniority target",
+        "No mentoring or leadership evidence"
+      ],
+      "recommendation": "Possible future pipeline / mid-level track. Not a priority for this senior requisition unless requirements are flexible.",
+      "interview_priority": "LOW"
+    }
+  ]
+}

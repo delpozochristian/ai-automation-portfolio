@@ -1,0 +1,222 @@
+{
+  "name": "07 - Recruiter Screening Engine",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "a1000001-0001-4000-8000-000000000001",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * AI Talent Copilot — Screening Engine demo batch\n * Replace this payload with your own JD + CV texts (or load from files).\n * Fictional profiles only — see /demo in the repo.\n */\nreturn [{\n  json: {\n    job_title: 'Senior Backend Java Engineer',\n    job_description: [\n      'Title: Senior Backend Java Engineer',\n      'Seniority: Senior (6+ years)',\n      '',\n      'Hard requirements:',\n      '- Java 17+',\n      '- Spring Boot',\n      '- Microservices',\n      '- AWS (ECS/EKS, SQS/SNS)',\n      '- Apache Kafka (or strong event-driven experience)',\n      '- SQL (PostgreSQL/MySQL)',\n      '- CI/CD and automated testing',\n      '',\n      'Preferred: Leadership / tech lead, Observability, Mentoring',\n      'Experience: 6+ years backend, 3+ years production microservices',\n      'Responsibilities: Design Spring Boot services, own Kafka pipelines, mentor engineers'\n    ].join('\\n'),\n    candidates: [\n      {\n        candidate_name: 'Alex Rivera',\n        cv_text: [\n          'Alex Rivera — Backend engineer, 8 years Java microservices on AWS. Led squad of 5.',\n          'NovaPayments (2021–Present) Tech Lead/Senior Backend:',\n          '- 12 Spring Boot microservices (Java 17) on AWS EKS',\n          '- Kafka pipelines ~40M messages/day; p99 latency -35%',\n          '- Mentored 4 engineers; hiring loops',\n          'CloudRetail (2018–2021): monolith to microservices; PostgreSQL; SQS/SNS',\n          'DataBridge (2016–2018): Spring Boot REST + MySQL',\n          'Skills: Java, Spring Boot, Microservices, AWS, Kafka, PostgreSQL, MySQL, CI/CD, mentoring'\n        ].join('\\n')\n      },\n      {\n        candidate_name: 'Jordan Lee',\n        cv_text: [\n          'Jordan Lee — Backend developer, 5 years Java/Spring Boot.',\n          'ShopWave (2022–Present): Spring Boot APIs, PostgreSQL, Redis, AWS ECS, JUnit',\n          'MediSoft (2020–2022): Spring Boot tools + MySQL batch jobs',\n          'SoftLabs (2019–2020): Java monolith bugfixes',\n          'Skills: Java, Spring Boot, SQL, AWS ECS (basic), REST, JUnit',\n          'Gaps: no production Kafka; under 6 years; no leadership evidence'\n        ].join('\\n')\n      },\n      {\n        candidate_name: 'Sam Okonkwo',\n        cv_text: [\n          'Sam Okonkwo — EM / former Senior Backend, 10 years Java. Leads platform team of 8.',\n          'Finora EM Platform (2022–Present): Java platform libs; microservices AWS ECS+RDS; hiring scorecards',\n          'Finora Senior Backend (2019–2022): ledger services; SQS + Kafka topics; mentoring',\n          'LogiCore (2015–2019): Java logistics services; SQL reporting',\n          'Skills: Java, Spring Boot, Microservices, AWS, Kafka (prior), SQL, CI/CD, engineering management'\n        ].join('\\n')\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 0],
+      "id": "a1000001-0001-4000-8000-000000000002",
+      "name": "Load Demo Screening Batch"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "candidates",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [448, 0],
+      "id": "a1000001-0001-4000-8000-000000000003",
+      "name": "Split Candidates"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cn",
+              "name": "candidate_name",
+              "value": "={{ $json.candidate_name }}",
+              "type": "string"
+            },
+            {
+              "id": "cv",
+              "name": "cv_text",
+              "value": "={{ $json.cv_text }}",
+              "type": "string"
+            },
+            {
+              "id": "jt",
+              "name": "job_title",
+              "value": "={{ $('Load Demo Screening Batch').item.json.job_title }}",
+              "type": "string"
+            },
+            {
+              "id": "jd",
+              "name": "job_description",
+              "value": "={{ $('Load Demo Screening Batch').item.json.job_description }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "eval_prompt",
+              "value": "=You are the Screening Engine of AI Talent Copilot.\n\nTask: evaluate ONE candidate against ONE job description.\nReturn ONLY valid JSON (no markdown fences, no prose outside JSON).\n\nScoring rubric (0–100 integers):\n- technical_match: required technologies / stack depth\n- experience_match: years, seniority, domain similarity\n- leadership_match: people leadership, mentoring, ownership (0 if not required and no evidence)\n- overall_score: weighted — technical 45%, experience 35%, leadership 20%.\n  If JD does not require leadership: technical 55%, experience 45%, leadership 0.\n\nAnti-bias rules:\n- Ignore names as demographic signals.\n- Score only skills, experience, and JD requirements.\n- Do not invent employers, dates, or skills.\n- Optional nice-to-haves are not weighted like hard requirements.\n\ninterview_priority:\n- HIGH: overall_score >= 80\n- MEDIUM: 60–79\n- LOW: < 60\n\nJSON schema:\n{\n  \"candidate_name\": \"string\",\n  \"overall_score\": 0,\n  \"technical_match\": 0,\n  \"experience_match\": 0,\n  \"leadership_match\": 0,\n  \"strengths\": [\"string\"],\n  \"gaps\": [\"string\"],\n  \"recommendation\": \"string\",\n  \"interview_priority\": \"HIGH|MEDIUM|LOW\"\n}\n\nJOB TITLE:\n{{ $json.job_title }}\n\nJOB DESCRIPTION:\n{{ $json.job_description }}\n\nCANDIDATE NAME:\n{{ $json.candidate_name }}\n\nCANDIDATE CV:\n{{ $json.cv_text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [672, 0],
+      "id": "a1000001-0001-4000-8000-000000000004",
+      "name": "Build Evaluation Context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.eval_prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [912, 0],
+      "id": "a1000001-0001-4000-8000-000000000005",
+      "name": "Score Candidate (Gemini)"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [912, 224],
+      "id": "a1000001-0001-4000-8000-000000000006",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "jobs_knowledge",
+          "mode": "id"
+        },
+        "prompt": "={{ 'Senior Backend Java Engineer: ' + $json.job_title }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [448, 240],
+      "id": "a1000001-0001-4000-8000-000000000007",
+      "name": "Optional JD RAG (jobs_knowledge)",
+      "disabled": true,
+      "notes": "Enable after running workflow 04. Use retrieved docs to enrich job_description.",
+      "credentials": {
+        "qdrantApi": {
+          "id": "vf4UnVoVrteDeGik",
+          "name": "Qdrant Local"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [448, 432],
+      "id": "a1000001-0001-4000-8000-000000000008",
+      "name": "Embeddings Google Gemini",
+      "disabled": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst raw = item.text ?? item.response ?? item.output ?? JSON.stringify(item);\nconst text = typeof raw === 'string' ? raw : JSON.stringify(raw);\n\nconst start = text.indexOf('{');\nconst end = text.lastIndexOf('}');\nif (start === -1 || end === -1) {\n  throw new Error('LLM did not return JSON. Raw: ' + text.slice(0, 400));\n}\n\nconst parsed = JSON.parse(text.slice(start, end + 1));\nconst clamp = (n) => Math.max(0, Math.min(100, Number(n) || 0));\nconst score = clamp(parsed.overall_score);\n\nreturn [{\n  json: {\n    candidate_name: parsed.candidate_name || $('Build Evaluation Context').item.json.candidate_name,\n    overall_score: score,\n    technical_match: clamp(parsed.technical_match),\n    experience_match: clamp(parsed.experience_match),\n    leadership_match: clamp(parsed.leadership_match),\n    strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],\n    gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],\n    recommendation: parsed.recommendation || '',\n    interview_priority: ['HIGH', 'MEDIUM', 'LOW'].includes(parsed.interview_priority)\n      ? parsed.interview_priority\n      : (score >= 80 ? 'HIGH' : score >= 60 ? 'MEDIUM' : 'LOW')\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1152, 0],
+      "id": "a1000001-0001-4000-8000-000000000009",
+      "name": "Parse Score JSON"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1360, 0],
+      "id": "a1000001-0001-4000-8000-00000000000a",
+      "name": "Aggregate Scores"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobTitle = $('Load Demo Screening Batch').first().json.job_title;\nconst payload = $input.first().json;\nconst rows = Array.isArray(payload.data) ? payload.data : $input.all().map((i) => i.json);\n\nconst ranking = [...rows]\n  .sort((a, b) => (b.overall_score || 0) - (a.overall_score || 0))\n  .map((c, idx) => ({ rank: idx + 1, ...c }));\n\nreturn [{\n  json: {\n    product: 'AI Talent Copilot',\n    workflow: '07 - Recruiter Screening Engine',\n    job_title: jobTitle,\n    candidates_evaluated: ranking.length,\n    ranking\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1584, 0],
+      "id": "a1000001-0001-4000-8000-00000000000b",
+      "name": "Rank Candidates"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [[{ "node": "Load Demo Screening Batch", "type": "main", "index": 0 }]]
+    },
+    "Load Demo Screening Batch": {
+      "main": [[{ "node": "Split Candidates", "type": "main", "index": 0 }]]
+    },
+    "Split Candidates": {
+      "main": [[{ "node": "Build Evaluation Context", "type": "main", "index": 0 }]]
+    },
+    "Build Evaluation Context": {
+      "main": [[{ "node": "Score Candidate (Gemini)", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "Score Candidate (Gemini)", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [[{ "node": "Optional JD RAG (jobs_knowledge)", "type": "ai_embedding", "index": 0 }]]
+    },
+    "Score Candidate (Gemini)": {
+      "main": [[{ "node": "Parse Score JSON", "type": "main", "index": 0 }]]
+    },
+    "Parse Score JSON": {
+      "main": [[{ "node": "Aggregate Scores", "type": "main", "index": 0 }]]
+    },
+    "Aggregate Scores": {
+      "main": [[{ "node": "Rank Candidates", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7a7a7a7a-07aa-4aa0-87a0-screening0001",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e5c6f56d2ceeca9013c50e1e343bc5b368d89ed5bb4d6dbcb8c98c682c938bb"
+  },
+  "nodeGroups": [],
+  "id": "ScreeningEngine07AI",
+  "tags": []
+}

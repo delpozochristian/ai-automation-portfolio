@@ -18,7 +18,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "Sos un Recruiter Senior especializado en selección de perfiles tecnológicos.\n\nDisponés de dos herramientas:\n\n1. Base de conocimiento del candidato.\n2. Base de conocimiento de la búsqueda laboral.\n\nSiempre utilizá ambas herramientas antes de responder.\n\nCuando el usuario solicite una comparación, devolvé:\n\n- Compatibilidad (%)\n- Fortalezas\n- Debilidades\n- Skills faltantes\n- Riesgos\n- Recomendación\n- Preguntas sugeridas para entrevista\n\nNunca inventes información que no esté en las bases de conocimiento.",
+        "text": "You are a Senior Technical Recruiter AI assistant for AI Talent Copilot.\n\nYou have two retrieval tools:\n1. Candidate knowledge base (CV / career evidence).\n2. Job description knowledge base (role requirements).\n\nALWAYS query BOTH tools before answering.\n\nEvaluation rules:\n- Score only skills, experience, domain fit, and leadership evidence vs the JD.\n- Do NOT consider protected attributes or demographic proxies (age, gender, nationality, etc.).\n- If evidence is missing, say so explicitly. Never invent employers, dates, or skills.\n\nWhen the user asks for a match analysis, respond in this structure:\n\n## Compatibility\n- Overall match: NN%\n- Technical match: NN%\n- Experience match: NN%\n- Leadership / soft-skills match: NN%\n\n## Evidence-based strengths\n- Bullet list with CV evidence\n\n## Gaps / missing skills\n- Bullet list mapped to JD requirements\n\n## Risks\n- Hiring risks grounded in evidence (or \"none identified\")\n\n## Recommendation\n- ADVANCE | HOLD | REJECT — with 2–3 sentence rationale\n\n## Interview questions\n- 5 targeted questions to validate gaps or claimed strengths\n\nMatch the user's language (Spanish or English).",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -53,7 +53,7 @@
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "toolDescription": "Busca información del candidato Christian del Pozo.",
+        "toolDescription": "Retrieve candidate CV evidence: experience, skills, projects, education, leadership.",
         "qdrantCollection": {
           "__rl": true,
           "value": "portfolio_knowledge",
@@ -96,7 +96,7 @@
     {
       "parameters": {
         "mode": "retrieve-as-tool",
-        "toolDescription": "Busca información de la descripción del puesto laboral.",
+        "toolDescription": "Retrieve job description requirements: title, seniority, required skills, responsibilities.",
         "qdrantCollection": {
           "__rl": true,
           "mode": "id",
