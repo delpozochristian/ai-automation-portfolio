@@ -1,0 +1,158 @@
+{
+  "name": "09 - Recruiter Chat Interface",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 0],
+      "id": "c3000001-0001-4000-8000-000000000001",
+      "name": "When chat message received",
+      "webhookId": "recruiter-chat-09-talent-copilot"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the Recruiter Chat Interface of AI Talent Copilot — a SaaS-style copilot for Talent Acquisition.\n\nYou help recruiters explain decisions, compare candidates, and prepare next steps.\n\nTools (ALWAYS use them before answering factual questions):\n1) candidates_knowledge — CV evidence for one or more candidates (query by candidate_id and/or name + skills).\n2) jobs_knowledge — job requirements (query by job_id and role keywords).\n\nWhen the recruiter asks comparative questions like:\n\"Why did you recommend Alex over Jordan?\"\n\"Who is stronger on Kafka?\"\n\"What are the risks of advancing Sam?\"\n\nYou MUST:\n1. Retrieve evidence for EACH mentioned candidate.\n2. Retrieve the relevant job requirements.\n3. Answer with an evidence-first structure.\n\nResponse format (Markdown):\n\n## Verdict\nOne clear recommendation sentence.\n\n## Side-by-side (when comparing)\n| Criterion | Candidate A | Candidate B |\n|---|---|---|\n| Technical | ... | ... |\n| Experience | ... | ... |\n| Leadership | ... | ... |\n\n## Evidence\n- Bullet facts retrieved from CVs (quote or paraphrase tightly)\n- Map each fact to a JD requirement when possible\n\n## Gaps / risks\n- Missing skills or open questions to validate in interview\n\n## Suggested next step\n- ADVANCE / HOLD / REJECT (per candidate) + 2 interview questions\n\nRules:\n- Never invent employers, dates, or skills.\n- If evidence is insufficient, say so explicitly.\n- Anti-bias: evaluate only skills, experience, and JD fit — no demographic proxies.\n- Match the recruiter's language (Spanish or English).\n- Prefer candidate_id references (cand_001, cand_002, …) when known.\n\nDemo pool (if indexed via workflow 08):\n- cand_001 Alex Rivera\n- cand_002 Jordan Lee\n- cand_003 Sam Okonkwo\nDemo job: job_001 Senior Backend Java Engineer"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [280, 0],
+      "id": "c3000001-0001-4000-8000-000000000002",
+      "name": "Recruiter Copilot Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [200, 240],
+      "id": "c3000001-0001-4000-8000-000000000003",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Retrieve candidate CV evidence from candidates_knowledge. For comparisons, call once per candidate using candidate_id and/or full name plus relevant skills (e.g. 'cand_001 Alex Rivera Kafka Spring Boot').",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "candidates_knowledge",
+          "mode": "id"
+        },
+        "topK": 8,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [520, 200],
+      "id": "c3000001-0001-4000-8000-000000000004",
+      "name": "Tool: candidates_knowledge",
+      "credentials": {
+        "qdrantApi": {
+          "id": "vf4UnVoVrteDeGik",
+          "name": "Qdrant Local"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [520, 400],
+      "id": "c3000001-0001-4000-8000-000000000005",
+      "name": "Embeddings Candidates",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Retrieve job description requirements from jobs_knowledge (title, seniority, hard skills, responsibilities). Query with job_id and role keywords (e.g. 'job_001 Senior Backend Java Kafka AWS').",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "jobs_knowledge",
+          "mode": "id"
+        },
+        "topK": 6,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [760, 200],
+      "id": "c3000001-0001-4000-8000-000000000006",
+      "name": "Tool: jobs_knowledge",
+      "credentials": {
+        "qdrantApi": {
+          "id": "vf4UnVoVrteDeGik",
+          "name": "Qdrant Local"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [760, 400],
+      "id": "c3000001-0001-4000-8000-000000000007",
+      "name": "Embeddings Jobs",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SAnoSzrpwuBitiKP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [[{ "node": "Recruiter Copilot Agent", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "Recruiter Copilot Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Tool: candidates_knowledge": {
+      "ai_tool": [[{ "node": "Recruiter Copilot Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Embeddings Candidates": {
+      "ai_embedding": [[{ "node": "Tool: candidates_knowledge", "type": "ai_embedding", "index": 0 }]]
+    },
+    "Tool: jobs_knowledge": {
+      "ai_tool": [[{ "node": "Recruiter Copilot Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Embeddings Jobs": {
+      "ai_embedding": [[{ "node": "Tool: jobs_knowledge", "type": "ai_embedding", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9a9a9a9a-09aa-4aa0-89a0-recruiterchat01",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e5c6f56d2ceeca9013c50e1e343bc5b368d89ed5bb4d6dbcb8c98c682c938bb"
+  },
+  "nodeGroups": [],
+  "id": "RecruiterChat09AI",
+  "tags": []
+}

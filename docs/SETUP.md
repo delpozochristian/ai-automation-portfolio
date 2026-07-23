@@ -33,8 +33,8 @@ Dashboard: `http://localhost:6333/dashboard`
 
 | Credencial | Tipo | Workflows |
 |---|---|---|
-| Google Gemini(PaLM) Api account | `googlePalmApi` | 01–08 |
-| Qdrant Local | `qdrantApi` | 02–08 (RAG) |
+| Google Gemini(PaLM) Api account | `googlePalmApi` | 01–09 |
+| Qdrant Local | `qdrantApi` | 02–09 (RAG) |
 
 | Campo Qdrant local | Valor |
 |---|---|
@@ -48,8 +48,8 @@ Dashboard: `http://localhost:6333/dashboard`
 | Colección | Rol | Escrita por | Leída por |
 |---|---|---|---|
 | `portfolio_knowledge` | CV personal (demos 01–06) | 02 | 03, 05, 06 |
-| `jobs_knowledge` | Job descriptions | 04 | 05, 06, 07 |
-| `candidates_knowledge` | Pool multi-candidato (producto) | **08** | **07** |
+| `jobs_knowledge` | Job descriptions | 04 | 05, 06, 07, 09 |
+| `candidates_knowledge` | Pool multi-candidato (producto) | **08** | **07**, **09** |
 
 Arquitectura: **index once / retrieve many** — ver README.
 
@@ -91,19 +91,21 @@ Para producción en 08: reemplazar el Code node por Read Files + Extract PDF + m
 ```
 04 - Job Indexer                 → jobs_knowledge
 08 - Candidates Knowledge Indexer → candidates_knowledge
-07 - Screening Engine            → ranking ATS JSON   ★
+07 - Screening Engine            → ranking ATS JSON
+09 - Recruiter Chat Interface    → “Why Alex over Jordan?”  ★ SaaS UX
 05 - Match AI                    → deep-dive 1 candidato
 06 - Interview Coach             → plan de entrevista
 02/03                            → demos portfolio personal
 01                               → baseline sin RAG
 ```
 
-### Demo Screening (recomendado)
+### Demo Screening + Chat (recomendado)
 
 1. Importar **08** → Gemini + Qdrant → **Execute** (crea `candidates_knowledge`)
-2. Importar **04** → indexar JD de demo en `jobs_knowledge` (ideal)
-3. Importar **07** → **Execute** → salida de **Rank Candidates (ATS Payload)**
-4. Comparar con `demo/sample_screening_result.json`
+2. Importar **04** → indexar JD de demo en `jobs_knowledge`
+3. Importar **07** → **Execute** → ranking ATS
+4. Importar **09** → **Activate** → preguntar: *“¿Por qué Alex sobre Jordan?”*
+5. Comparar chat con `demo/sample_recruiter_chat.md`
 
 Si `jobs_knowledge` está vacío, el agente puede fallar o scorear mal: indexá la JD primero.
 
@@ -131,6 +133,8 @@ Si `jobs_knowledge` está vacío, el agente puede fallar o scorear mal: indexá 
 |---|---|
 | 07: no hay evidencia de candidato | Ejecutar **08** primero |
 | 07: job retrieve vacío | Ejecutar **04** con la JD de demo |
+| 09: respuestas genéricas / sin evidencia | Activar workflow + verificar colecciones Qdrant |
+| 09: confunde candidatos | Pedir `candidate_id` (cand_001…) o nombre completo |
 | Credenciales en rojo | Reasignar en cada nodo |
 | JSON inválido del agente | Revisar system prompt; el Code node busca `{...}` |
 | Scores inconsistentes | Misma rúbrica en `PROMPTS.md` |

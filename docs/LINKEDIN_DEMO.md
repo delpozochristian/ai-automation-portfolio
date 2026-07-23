@@ -43,10 +43,9 @@ JD   →  04 Indexer  →  jobs_knowledge ───────┼→ 07 Screeni
 **Product modules**
 
 1. Index JD + multi-candidate pool (RAG)
-2. Chat over candidate knowledge
-3. Single-candidate match analysis
-4. **Batch Screening Engine** → ATS JSON (`criteria_scores` + `evidence`)
-5. Interview Coach
+2. Batch Screening Engine → ATS JSON (`criteria_scores` + `evidence`)
+3. **Recruiter Chat Interface** → explain / compare with evidence
+4. Single-candidate match + Interview Coach
 
 ---
 
@@ -56,7 +55,7 @@ JD   →  04 Indexer  →  jobs_knowledge ───────┼→ 07 Screeni
 2. **Setup:** Job = Senior Backend Java Engineer (Java, Spring Boot, Kafka, AWS, SQL, leadership).
 3. **Screen:** Run `07 - Recruiter Screening Engine` (no PDFs — RAG only).
 4. **Output:** ATS JSON with `candidate_id`, `criteria_scores`, `evidence`, `recommendation`, `interview_priority`.
-5. **Follow-up:** Open Match AI or Interview Coach for the #1 candidate.
+5. **Chat:** Open `09 - Recruiter Chat Interface` and ask *“Why Alex over Jordan?”* — evidence-backed verdict.
 
 Expected pattern from demo data:
 

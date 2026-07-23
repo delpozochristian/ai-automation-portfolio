@@ -30,8 +30,9 @@ Recruiters waste hours screening CVs manually:
 1. Index CVs and job descriptions into vector knowledge bases (RAG)
 2. Chat with candidate / role context
 3. Compare one candidate vs a JD (match analysis)
-4. **Screen multiple candidates and return an ATS-ready ranked JSON shortlist**
+4. Screen multiple candidates and return an ATS-ready ranked JSON shortlist
 5. Generate interview plans and practice answers
+6. **Ask natural-language questions** (“Why Alex over Jordan?”) and get evidence-backed answers
 
 ---
 
@@ -51,8 +52,8 @@ Screening at scale cannot re-parse full PDFs on every run. Parsing + embedding i
 | Collection | Purpose | Written by | Read by |
 |---|---|---|---|
 | `portfolio_knowledge` | Single personal CV (portfolio demos 01–06) | 02 | 03, 05, 06 |
-| `jobs_knowledge` | Job descriptions (`job_id` metadata) | 04 | 05, 06, **07** |
-| **`candidates_knowledge`** | **Multi-candidate pool (`candidate_id` metadata)** | **08** | **07** |
+| `jobs_knowledge` | Job descriptions (`job_id` metadata) | 04 | 05, 06, **07**, **09** |
+| **`candidates_knowledge`** | **Multi-candidate pool (`candidate_id` metadata)** | **08** | **07**, **09** |
 
 `portfolio_knowledge` stays for the original personal-portfolio demos.  
 **`candidates_knowledge`** is the scalable pool for product screening.
@@ -68,16 +69,19 @@ flowchart LR
         W04 --> QJ[(jobs_knowledge)]
     end
 
-    subgraph screen [Screening - many times]
+    subgraph screen [Screening + Chat]
         Req[job_id + candidate_ids] --> W07[07 Screening Engine]
+        Chat[Recruiter questions] --> W09[09 Recruiter Chat]
         W07 --> QC
         W07 --> QJ
-        W07 --> Gemini[Gemini scoring]
-        Gemini --> ATS[ATS JSON ranking]
+        W09 --> QC
+        W09 --> QJ
+        W07 --> ATS[ATS JSON ranking]
+        W09 --> Explain[Evidence-backed answers]
     end
 ```
 
-**Rule:** Workflow **07 never opens PDFs**. It only retrieves embeddings already stored by **08** and **04**.
+**Rule:** Workflows **07** and **09** never open PDFs. They only retrieve embeddings already stored by **08** and **04**.
 
 ---
 
@@ -143,6 +147,7 @@ flowchart TB
         W05[05 Match AI]
         W06[06 Interview Coach]
         W07[07 Screening Engine]
+        W09[09 Recruiter Chat Interface]
         W03 --> Q1
         W05 --> Q1
         W05 --> Q2
@@ -150,6 +155,8 @@ flowchart TB
         W06 --> Q2
         W07 --> Q3
         W07 --> Q2
+        W09 --> Q3
+        W09 --> Q2
     end
 ```
 
@@ -163,12 +170,13 @@ flowchart TB
 |---|---|---|
 | 01 | AI Recruiter Assistant | Baseline conversational assistant |
 | 02 | CV RAG Indexer | Embeds personal CV → `portfolio_knowledge` |
-| 03 | Recruiter AI | Chat over candidate RAG |
+| 03 | Recruiter AI | Chat over personal CV RAG |
 | 04 | Job Description Indexer | Embeds JD → `jobs_knowledge` |
 | 05 | Recruiter Match AI | Single candidate vs JD |
 | 06 | Interview Coach AI | Interview prep + storytelling |
 | **07** | **Recruiter Screening Engine** | **Multi-candidate RAG scoring + ATS ranking** |
 | **08** | **Candidates Knowledge Indexer** | **Batch embed CVs → `candidates_knowledge`** |
+| **09** | **Recruiter Chat Interface** | **SaaS-style chat: explain / compare with evidence** |
 
 Demo data (fictional): [`demo/`](./demo/)  
 Prompt standards: [`docs/PROMPTS.md`](./docs/PROMPTS.md)
@@ -180,11 +188,18 @@ Prompt standards: [`docs/PROMPTS.md`](./docs/PROMPTS.md)
 ```
 1. Index JD                 → 04  → jobs_knowledge
 2. Index candidate batch    → 08  → candidates_knowledge
-3. Screen shortlist         → 07  → ranked ATS JSON  ★
-4. Deep-dive one candidate  → 05
-5. Interview plan           → 06
+3. Screen shortlist         → 07  → ranked ATS JSON
+4. Ask the copilot          → 09  → "Why Alex over Jordan?"  ★ SaaS moment
+5. Deep-dive / interview    → 05 / 06
 ```
 
+### Recruiter Chat (09) — example
+
+> “¿Por qué recomendaste a Alex sobre Jordan?”
+
+The agent retrieves both CVs + JD from Qdrant and answers with verdict, side-by-side criteria, evidence, gaps, and next step.
+
+Sample script: [`demo/sample_recruiter_chat.md`](./demo/sample_recruiter_chat.md)
 ---
 
 ## Business impact
@@ -194,7 +209,7 @@ Prompt standards: [`docs/PROMPTS.md`](./docs/PROMPTS.md)
 | Time to shortlist 50 CVs | Days | Minutes (retrieve + rank) |
 | Cost per re-screen | Re-parse every PDF | Reuse embeddings |
 | Consistency | Varies by recruiter | Shared rubric + JSON |
-| Explainability | Informal notes | Criteria + evidence + decision |
+| Explainability | Informal notes | Criteria + evidence + **chat Q&A** |
 | ATS integration | Copy/paste | Stable JSON contract |
 
 **Before:** Recruiter analyzes 100 CVs manually.  
@@ -215,9 +230,10 @@ Prompt standards: [`docs/PROMPTS.md`](./docs/PROMPTS.md)
 
 1. Run Qdrant + n8n ([`docs/SETUP.md`](./docs/SETUP.md))
 2. Import **08** → Execute (index demo candidates)
-3. Import **04** → index the sample JD (or rely on job summary fallback notes in SETUP)
+3. Import **04** → index the sample JD
 4. Import **07** → Execute → inspect ranked ATS JSON
-5. LinkedIn narrative: [`docs/LINKEDIN_DEMO.md`](./docs/LINKEDIN_DEMO.md)
+5. Import **09** → Activate → ask: *“Why Alex over Jordan?”*
+6. LinkedIn narrative: [`docs/LINKEDIN_DEMO.md`](./docs/LINKEDIN_DEMO.md)
 
 ---
 
@@ -226,8 +242,8 @@ Prompt standards: [`docs/PROMPTS.md`](./docs/PROMPTS.md)
 1. Qdrant showing `candidates_knowledge` + `jobs_knowledge`
 2. n8n canvas of **08** (index) and **07** (screen)
 3. Ranked ATS JSON output with `criteria_scores` + `evidence`
-4. **05** match chat / **06** interview coach
-
+4. **09 Recruiter Chat** answering a comparison with evidence
+5. **05** match chat / **06** interview coach
 ---
 
 ## Security & ethics
